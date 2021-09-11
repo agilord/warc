@@ -1,9 +1,10 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:base32/base32.dart';
 import 'package:buffer/buffer.dart';
 import 'package:crypto/crypto.dart';
-import 'package:warc/src/reader.dart';
+import 'package:warc/warc.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -26,6 +27,31 @@ void main() {
       for (final size in [1, 2, 3, 5, 8, 13, 21, 34, 55]) {
         await testWithStream(_chunk(file.openRead(), size));
       }
+
+      final plainSink = BytesBuilderSink();
+      final plainWriter = WarcWriter(output: plainSink);
+      await readWarc(file.openRead(), (r) async {
+        await plainWriter.add(r);
+        return true;
+      });
+      expect(plainWriter.contentOffset, 21507);
+      expect(plainWriter.encodedOffset, 21507);
+      await plainWriter.close();
+      expect(plainSink.result, hasLength(21507));
+      expect(plainSink.result, await file.readAsBytes());
+
+      final compressedSink = BytesBuilderSink();
+      final compressedWriter =
+          WarcWriter(output: compressedSink, encoder: gzip.encoder);
+      await readWarc(file.openRead(), (r) async {
+        await compressedWriter.add(r);
+        return true;
+      });
+      expect(compressedWriter.contentOffset, 21507);
+      expect(compressedWriter.encodedOffset, 5392);
+      await compressedWriter.close();
+      expect(compressedSink.result, hasLength(5392));
+      expect(gzip.decode(compressedSink.result), await file.readAsBytes());
     });
   });
 }
@@ -40,5 +66,23 @@ Stream<List<int>> _chunk(Stream<List<int>> input, int size) async* {
   }
   if (reader.remainingLength > 0) {
     yield reader.read(reader.remainingLength);
+  }
+}
+
+class BytesBuilderSink implements Sink<List<int>> {
+  final _buffer = BytesBuilder(copy: false);
+  Uint8List? _result;
+
+  Uint8List get result => _result!;
+
+  @override
+  void add(List<int> data) {
+    if (_result != null) throw StateError('Close already called.');
+    _buffer.add(data);
+  }
+
+  @override
+  void close() {
+    _result ??= _buffer.takeBytes();
   }
 }

@@ -20,7 +20,6 @@ Future<void> readWarc(
       if (header == null) {
         final boundary = indexOfHeaderEnd(buffer.toBytes());
         if (boundary > 0) {
-          print(boundary);
           final headerBuffer = buffer.takeBytes();
           final headerBytes = Uint8List.sublistView(headerBuffer, 0, boundary);
           header = parseHeaderBytes(headerBytes);
@@ -28,12 +27,12 @@ Future<void> readWarc(
           buffer.add(restOfBytes);
         }
       }
-      if (header != null && header.contentLength <= buffer.length) {
+      if (header != null && header.contentLength + 4 <= buffer.length) {
         final contentBuffer = buffer.takeBytes();
         final contentBytes =
             Uint8List.sublistView(contentBuffer, 0, header.contentLength);
         final restOfBytes =
-            Uint8List.sublistView(contentBuffer, header.contentLength);
+            Uint8List.sublistView(contentBuffer, header.contentLength + 4);
         buffer.add(restOfBytes);
         final next = await onRecord(WarcRecord(
           header: header,
