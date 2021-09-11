@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'parser.dart';
+import 'warc_parser.dart';
 import 'warc_record.dart';
 
 class OffsetLength {
@@ -67,8 +67,7 @@ class WarcWriter {
 
     final position = WarcRecordPosition(
       raw: OffsetLength(_rawOffset, rawLength),
-      encoded:
-          OffsetLength(_rawOffset, counterSink?._offset ?? rawLength),
+      encoded: OffsetLength(_rawOffset, counterSink?._offset ?? rawLength),
     );
 
     _rawOffset += position.raw.length;

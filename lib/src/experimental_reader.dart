@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'parser.dart';
+import 'warc_parser.dart';
 import 'warc_record.dart';
 
 class RawWarcHeaderOrChunk {
