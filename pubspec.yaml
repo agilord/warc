@@ -1,6 +1,6 @@
 name: warc
 description: WARC (web archive file format) reader (parser).
-version: 0.0.3-dev
+version: 0.0.3
 homepage: https://github.com/agilord/warc
 
 environment:

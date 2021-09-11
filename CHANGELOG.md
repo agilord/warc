@@ -1,6 +1,7 @@
 ## 0.0.3
 
 - Extended `WarcHeader` with named parameters.
+- Write CDXJ records based on written offsets. 
 
 ## 0.0.2
 
