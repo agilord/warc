@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 
+import 'package:warc/warc.dart';
+
 class WarcRecord {
   final WarcHeader header;
   final WarcPayload payload;
@@ -10,15 +12,74 @@ class WarcRecord {
   });
 }
 
+String _uri(String url) {
+  url = url.toString();
+  if (url.startsWith('<')) return url;
+  return '<$url>';
+}
+
+abstract class WarcTypes {
+  static const warcinfo = 'warcinfo';
+  static const response = 'response';
+  static const resource = 'resource';
+  static const request = 'request';
+  static const metadata = 'metadata';
+  static const revisit = 'revisit';
+  static const conversion = 'conversion';
+  static const continuation = 'continuation';
+}
+
 class WarcHeader {
   final String version;
   final Map<String, String> _values;
 
   int? _contentLength;
+  WarcHeader.fromValues({
+    this.version = '1.1',
+    required Map<String, String> values,
+  }) : _values = <String, String>{...values};
+
   WarcHeader({
     this.version = '1.1',
+    required String type,
+    required DateTime date,
+    required String recordId,
+    required int contentLength,
+    String? contentType,
+    String? warcinfoId,
+    String? concurrentTo,
+    String? ipAddress,
+    String? targetUri,
+    String? refersTo,
+    String? refersToTargetUri,
+    DateTime? refersToDate,
+    String? payloadDigest,
+    String? blockDigest,
+    String? payloadType,
+    String? filename,
+    String? truncated,
     Map<String, String>? values,
   }) : _values = <String, String>{
+          'WARC-Type': type,
+          'WARC-Date': date.toUtc().toIso8601String(),
+          'WARC-Record-ID': _uri(recordId),
+          'Content-Length': contentLength.toString(),
+          if (contentType != null) 'Content-Type': contentType,
+          if (warcinfoId != null) 'WARC-Warcinfo-ID': _uri(warcinfoId),
+          if (concurrentTo != null) 'WARC-Concurrent-To': _uri(concurrentTo),
+          if (ipAddress != null) 'WARC-IP-Address': ipAddress,
+          if (targetUri != null) 'WARC-Target-URI': targetUri,
+          if (refersTo != null) 'WARC-Refers-To': _uri(refersTo),
+          if (refersToTargetUri != null)
+            'WARC-Refers-To-Target-URI': refersToTargetUri,
+          if (refersToDate != null)
+            'WARC-Refers-To-Date': refersToDate.toUtc().toIso8601String(),
+          if (payloadDigest != null) 'WARC-Payload-Digest': payloadDigest,
+          if (blockDigest != null) 'WARC-Block-Digest': blockDigest,
+          // identified payload type
+          if (payloadType != null) 'WARC-Identified-Payload-Type': payloadType,
+          if (filename != null) 'WARC-Filename': filename,
+          if (truncated != null) 'WARC-Truncated': truncated,
           if (values != null) ...values,
         };
 

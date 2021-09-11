@@ -52,7 +52,7 @@ WarcHeader parseHeaderBytes(Uint8List bytes) {
     final value = line.substring(index + 1).trim();
     values[key] = value;
   }
-  return WarcHeader(
+  return WarcHeader.fromValues(
     version: warcVersion,
     values: values,
   );
