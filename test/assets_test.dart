@@ -31,10 +31,14 @@ void main() {
       final plainSink = BytesBuilderSink();
       final plainWriter = WarcWriter(output: plainSink);
       await readWarc(file.openRead(), (r) async {
-        await plainWriter.add(r);
+        final pos = await plainWriter.add(r);
+        expect(pos.raw.offset, 0);
+        expect(pos.raw.length, 21507);
+        expect(pos.encoded.offset, 0);
+        expect(pos.encoded.length, 21507);
         return true;
       });
-      expect(plainWriter.contentOffset, 21507);
+      expect(plainWriter.rawOffset, 21507);
       expect(plainWriter.encodedOffset, 21507);
       await plainWriter.close();
       expect(plainSink.result, hasLength(21507));
@@ -44,10 +48,14 @@ void main() {
       final compressedWriter =
           WarcWriter(output: compressedSink, encoder: gzip.encoder);
       await readWarc(file.openRead(), (r) async {
-        await compressedWriter.add(r);
+        final pos = await compressedWriter.add(r);
+        expect(pos.raw.offset, 0);
+        expect(pos.raw.length, 21507);
+        expect(pos.encoded.offset, 0);
+        expect(pos.encoded.length, 5392);
         return true;
       });
-      expect(compressedWriter.contentOffset, 21507);
+      expect(compressedWriter.rawOffset, 21507);
       expect(compressedWriter.encodedOffset, 5392);
       await compressedWriter.close();
       expect(compressedSink.result, hasLength(5392));

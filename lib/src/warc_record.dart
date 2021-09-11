@@ -33,7 +33,11 @@ class WarcHeader {
   final String version;
   final Map<String, String> _values;
 
+  String? _type;
+  DateTime? _date;
   int? _contentLength;
+  Uri? _targetUri;
+
   WarcHeader.fromValues({
     this.version = '1.1',
     required Map<String, String> values,
@@ -49,7 +53,7 @@ class WarcHeader {
     String? warcinfoId,
     String? concurrentTo,
     String? ipAddress,
-    String? targetUri,
+    Uri? targetUri,
     String? refersTo,
     String? refersToTargetUri,
     DateTime? refersToDate,
@@ -59,7 +63,7 @@ class WarcHeader {
     String? filename,
     String? truncated,
     Map<String, String>? values,
-  }) : _values = <String, String>{
+  })  : _values = <String, String>{
           'WARC-Type': type,
           'WARC-Date': date.toUtc().toIso8601String(),
           'WARC-Record-ID': _uri(recordId),
@@ -68,7 +72,7 @@ class WarcHeader {
           if (warcinfoId != null) 'WARC-Warcinfo-ID': _uri(warcinfoId),
           if (concurrentTo != null) 'WARC-Concurrent-To': _uri(concurrentTo),
           if (ipAddress != null) 'WARC-IP-Address': ipAddress,
-          if (targetUri != null) 'WARC-Target-URI': targetUri,
+          if (targetUri != null) 'WARC-Target-URI': targetUri.toString(),
           if (refersTo != null) 'WARC-Refers-To': _uri(refersTo),
           if (refersToTargetUri != null)
             'WARC-Refers-To-Target-URI': refersToTargetUri,
@@ -81,7 +85,11 @@ class WarcHeader {
           if (filename != null) 'WARC-Filename': filename,
           if (truncated != null) 'WARC-Truncated': truncated,
           if (values != null) ...values,
-        };
+        },
+        _type = type,
+        _date = date,
+        _contentLength = contentLength,
+        _targetUri = targetUri;
 
   Iterable<String> get keys => _values.keys;
   String? operator [](String key) {
@@ -97,8 +105,19 @@ class WarcHeader {
     return null;
   }
 
+  DateTime get date => _date ??= DateTime.parse(this['WARC-Date']!);
+  String get type => _type ??= this['WARC-Type']!;
+
   int get contentLength =>
       _contentLength ??= int.parse(this['Content-Length'] ?? '0');
+
+  Uri? get targetUri {
+    if (_targetUri == null) {
+      final v = this['WARC-Target-URI'];
+      _targetUri = v == null ? null : Uri.parse(v);
+    }
+    return _targetUri;
+  }
 }
 
 abstract class WarcPayload {

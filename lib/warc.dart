@@ -1,3 +1,4 @@
+export 'src/cdxj_record.dart';
 export 'src/warc_record.dart';
 export 'src/reader.dart';
 export 'src/writer.dart';

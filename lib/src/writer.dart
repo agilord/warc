@@ -4,11 +4,28 @@ import 'dart:convert';
 import 'parser.dart';
 import 'warc_record.dart';
 
+class OffsetLength {
+  final int offset;
+  final int length;
+
+  OffsetLength(this.offset, this.length);
+}
+
+class WarcRecordPosition {
+  final OffsetLength raw;
+  final OffsetLength encoded;
+
+  WarcRecordPosition({
+    required this.raw,
+    required this.encoded,
+  });
+}
+
 class WarcWriter {
   final Sink<List<int>> _outputSink;
   final Converter<List<int>, List<int>>? _encoder;
   bool _isClosed = false;
-  int _contentOffset = 0;
+  int _rawOffset = 0;
   int _encodedOffset = 0;
 
   WarcWriter._(this._outputSink, this._encoder);
@@ -20,19 +37,19 @@ class WarcWriter {
     return WarcWriter._(output, encoder);
   }
 
-  int get contentOffset => _contentOffset;
+  int get rawOffset => _rawOffset;
   int get encodedOffset => _encodedOffset;
 
-  Future<void> add(WarcRecord record) async {
+  Future<WarcRecordPosition> add(WarcRecord record) async {
     if (_isClosed) throw StateError('Writer was already closed.');
 
     final counterSink = _encoder == null ? null : _CounterSink(_outputSink);
     final chunkedSink = _encoder?.startChunkedConversion(counterSink!);
     final sink = chunkedSink ?? _outputSink;
 
-    var chunkLength = 0;
+    var rawLength = 0;
     void writeChunk(List<int> data) {
-      chunkLength += data.length;
+      rawLength += data.length;
       sink.add(data);
     }
 
@@ -47,8 +64,16 @@ class WarcWriter {
     writeChunk([carriageReturn, lineFeed, carriageReturn, lineFeed]);
 
     chunkedSink?.close();
-    _contentOffset += chunkLength;
-    _encodedOffset += counterSink?._offset ?? chunkLength;
+
+    final position = WarcRecordPosition(
+      raw: OffsetLength(_rawOffset, rawLength),
+      encoded:
+          OffsetLength(_rawOffset, counterSink?._offset ?? rawLength),
+    );
+
+    _rawOffset += position.raw.length;
+    _encodedOffset += position.encoded.length;
+    return position;
   }
 
   Future<void> close() async {
