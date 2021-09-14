@@ -58,9 +58,7 @@ class WarcWriter {
       writeChunk(utf8.encode('$key: ${record.header[key]}\r\n'));
     }
     writeChunk([carriageReturn, lineFeed]);
-    await for (final chunk in record.block.read()) {
-      writeChunk(chunk);
-    }
+    writeChunk(record.block.bytes);
     writeChunk([carriageReturn, lineFeed, carriageReturn, lineFeed]);
 
     chunkedSink?.close();

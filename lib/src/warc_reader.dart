@@ -36,7 +36,7 @@ Future<void> readWarc(
         buffer.add(restOfBytes);
         final next = await onRecord(WarcRecord(
           header: header,
-          block: WarcBlock.bytes(contentBytes),
+          block: WarcBlock(contentBytes),
         ));
         if (!next) return;
         header = null;

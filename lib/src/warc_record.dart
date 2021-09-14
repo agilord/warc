@@ -33,6 +33,7 @@ class WarcHeader {
 
   String? _type;
   DateTime? _date;
+  String? _recordId;
   int? _contentLength;
   Uri? _targetUri;
 
@@ -105,6 +106,7 @@ class WarcHeader {
 
   DateTime get date => _date ??= DateTime.parse(this['WARC-Date']!);
   String get type => _type ??= this['WARC-Type']!;
+  String get recordId => _recordId ??= this['WARC-Record-ID']!;
 
   int get contentLength =>
       _contentLength ??= int.parse(this['Content-Length'] ?? '0');
@@ -118,33 +120,8 @@ class WarcHeader {
   }
 }
 
-abstract class WarcBlock {
-  WarcBlock();
+class WarcBlock {
+  final Uint8List bytes;
 
-  factory WarcBlock.bytes(List<int> bytes) => _WarcBlockBytes(bytes);
-
-  Stream<List<int>> read();
-
-  Future<List<int>> readAsBytes() async {
-    final buffer = BytesBuilder(copy: false);
-    await for (final chunk in read()) {
-      buffer.add(chunk);
-    }
-    return buffer.takeBytes();
-  }
-}
-
-class _WarcBlockBytes extends WarcBlock {
-  final List<int> _bytes;
-  _WarcBlockBytes(this._bytes);
-
-  @override
-  Stream<List<int>> read() {
-    return Stream<List<int>>.value(_bytes);
-  }
-
-  @override
-  Future<List<int>> readAsBytes() async {
-    return _bytes;
-  }
+  WarcBlock(this.bytes);
 }

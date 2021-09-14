@@ -16,9 +16,9 @@ void main() {
           expect(r.header.targetUri.toString(), 'http://commoncrawl.org/');
           expect(r.header.date, DateTime.utc(2019, 12, 10, 10, 00, 01, 0));
           expect(r.header.type, 'response');
-          final payload = await r.block.readAsBytes();
-          expect(payload, hasLength(20931));
-          final hash = base32.encode(castBytes(sha1.convert(payload).bytes));
+          final bytes = r.block.bytes;
+          expect(bytes, hasLength(20931));
+          final hash = base32.encode(castBytes(sha1.convert(bytes).bytes));
           expect(hash, 'IJCC6OVIIPVV5KV6WESWIGH7UV2NO34X');
           expect(r.header['WARC-Block-Digest'], 'sha1:$hash');
           return true;

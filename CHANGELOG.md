@@ -1,6 +1,7 @@
 ## 0.0.4
 
 - Renamed `WarcRecord.payload` to `block` (also: `WarcBlock`).
+- `WarcBlock` and with that `WarcRecord` is now only synchronous.
 
 ## 0.0.3
 
