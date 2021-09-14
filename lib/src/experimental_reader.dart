@@ -85,7 +85,7 @@ Future<void> readWarc(
       payload = p;
       chunksAdded = 0;
       onRecordResult =
-          onRecord(WarcRecord(header: header!, payload: p)).whenComplete(() {
+          onRecord(WarcRecord(header: header!, block: p)).whenComplete(() {
         p._controller.close();
         header = null;
         payload = null;
@@ -105,7 +105,7 @@ Future<void> readWarc(
   }
 }
 
-class _Payload extends WarcPayload {
+class _Payload extends WarcBlock {
   final _controller = StreamController<List<int>>();
 
   @override

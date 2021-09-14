@@ -1,3 +1,7 @@
+## 0.0.4
+
+- Renamed `WarcRecord.payload` to `block` (also: `WarcBlock`).
+
 ## 0.0.3
 
 - Extended `WarcHeader` with named parameters.

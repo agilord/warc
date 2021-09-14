@@ -16,7 +16,7 @@ void main() {
           expect(r.header.targetUri.toString(), 'http://commoncrawl.org/');
           expect(r.header.date, DateTime.utc(2019, 12, 10, 10, 00, 01, 0));
           expect(r.header.type, 'response');
-          final payload = await r.payload.readAsBytes();
+          final payload = await r.block.readAsBytes();
           expect(payload, hasLength(20931));
           final hash = base32.encode(castBytes(sha1.convert(payload).bytes));
           expect(hash, 'IJCC6OVIIPVV5KV6WESWIGH7UV2NO34X');

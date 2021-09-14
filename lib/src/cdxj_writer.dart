@@ -9,9 +9,9 @@ class CdxjWriter {
 
   CdxjWriter({
     required Sink<List<int>> output,
-    bool omitVersion = false,
+    bool emitVersion = false,
   })  : _outputSink = output,
-        _emitVersion = !omitVersion;
+        _emitVersion = emitVersion;
 
   void add(CdxjRecord record) {
     if (_emitVersion) {
@@ -26,7 +26,7 @@ class CdxjWriter {
     _outputSink.add([carriageReturn, lineFeed]);
   }
 
-  void close() async {
+  Future<void> close() async {
     _outputSink.close();
   }
 }

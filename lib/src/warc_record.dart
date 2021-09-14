@@ -1,14 +1,12 @@
 import 'dart:typed_data';
 
-import 'package:warc/warc.dart';
-
 class WarcRecord {
   final WarcHeader header;
-  final WarcPayload payload;
+  final WarcBlock block;
 
   WarcRecord({
     required this.header,
-    required this.payload,
+    required this.block,
   });
 }
 
@@ -120,10 +118,10 @@ class WarcHeader {
   }
 }
 
-abstract class WarcPayload {
-  WarcPayload();
+abstract class WarcBlock {
+  WarcBlock();
 
-  factory WarcPayload.bytes(List<int> bytes) => _WarcPayloadBytes(bytes);
+  factory WarcBlock.bytes(List<int> bytes) => _WarcBlockBytes(bytes);
 
   Stream<List<int>> read();
 
@@ -136,9 +134,9 @@ abstract class WarcPayload {
   }
 }
 
-class _WarcPayloadBytes extends WarcPayload {
+class _WarcBlockBytes extends WarcBlock {
   final List<int> _bytes;
-  _WarcPayloadBytes(this._bytes);
+  _WarcBlockBytes(this._bytes);
 
   @override
   Stream<List<int>> read() {
