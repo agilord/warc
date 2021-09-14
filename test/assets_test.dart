@@ -11,18 +11,16 @@ void main() {
   group('Assets test', () {
     test('single-response.warc', () async {
       Future<void> testWithStream(Stream<List<int>> input) async {
-        await readWarc(input, (r) async {
-          expect(r.header.contentLength, 20931);
-          expect(r.header.targetUri.toString(), 'http://commoncrawl.org/');
-          expect(r.header.date, DateTime.utc(2019, 12, 10, 10, 00, 01, 0));
-          expect(r.header.type, 'response');
-          final bytes = r.block.bytes;
-          expect(bytes, hasLength(20931));
-          final hash = base32.encode(castBytes(sha1.convert(bytes).bytes));
-          expect(hash, 'IJCC6OVIIPVV5KV6WESWIGH7UV2NO34X');
-          expect(r.header['WARC-Block-Digest'], 'sha1:$hash');
-          return true;
-        });
+        final r = await readWarc(input).single;
+        expect(r.header.contentLength, 20931);
+        expect(r.header.targetUri.toString(), 'http://commoncrawl.org/');
+        expect(r.header.date, DateTime.utc(2019, 12, 10, 10, 00, 01, 0));
+        expect(r.header.type, 'response');
+        final bytes = r.block.bytes;
+        expect(bytes, hasLength(20931));
+        final hash = base32.encode(castBytes(sha1.convert(bytes).bytes));
+        expect(hash, 'IJCC6OVIIPVV5KV6WESWIGH7UV2NO34X');
+        expect(r.header['WARC-Block-Digest'], 'sha1:$hash');
       }
 
       final file = File('test_assets/single-response.warc');
@@ -33,14 +31,13 @@ void main() {
 
       final plainSink = BytesBuilderSink();
       final plainWriter = WarcWriter(output: plainSink);
-      await readWarc(file.openRead(), (r) async {
-        final pos = await plainWriter.add(r);
-        expect(pos.raw.offset, 0);
-        expect(pos.raw.length, 21507);
-        expect(pos.encoded.offset, 0);
-        expect(pos.encoded.length, 21507);
-        return true;
-      });
+      final r = await readWarc(file.openRead()).single;
+      final pos1 = await plainWriter.add(r);
+      expect(pos1.raw.offset, 0);
+      expect(pos1.raw.length, 21507);
+      expect(pos1.encoded.offset, 0);
+      expect(pos1.encoded.length, 21507);
+
       expect(plainWriter.rawOffset, 21507);
       expect(plainWriter.encodedOffset, 21507);
       await plainWriter.close();
@@ -50,14 +47,11 @@ void main() {
       final compressedSink = BytesBuilderSink();
       final compressedWriter =
           WarcWriter(output: compressedSink, encoder: gzip.encoder);
-      await readWarc(file.openRead(), (r) async {
-        final pos = await compressedWriter.add(r);
-        expect(pos.raw.offset, 0);
-        expect(pos.raw.length, 21507);
-        expect(pos.encoded.offset, 0);
-        expect(pos.encoded.length, 5392);
-        return true;
-      });
+      final pos2 = await compressedWriter.add(r);
+      expect(pos2.raw.offset, 0);
+      expect(pos2.raw.length, 21507);
+      expect(pos2.encoded.offset, 0);
+      expect(pos2.encoded.length, 5392);
       expect(compressedWriter.rawOffset, 21507);
       expect(compressedWriter.encodedOffset, 5392);
       await compressedWriter.close();

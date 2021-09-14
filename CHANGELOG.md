@@ -1,7 +1,9 @@
 ## 0.0.4
 
+**Breaking changes**:
 - Renamed `WarcRecord.payload` to `block` (also: `WarcBlock`).
 - `WarcBlock` and with that `WarcRecord` is now only synchronous.
+- `readWarc` returns a stream instead of callback method.
 
 ## 0.0.3
 
