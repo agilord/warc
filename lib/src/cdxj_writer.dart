@@ -1,7 +1,7 @@
 import 'dart:convert';
 
+import 'common.dart';
 import 'cdxj_record.dart';
-import 'warc_parser.dart';
 
 class CdxjWriter {
   final Sink<List<int>> _outputSink;

@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'common.dart';
+import 'warc_http_block.dart';
 import 'warc_parser.dart';
 import 'warc_record.dart';
 
@@ -37,9 +39,14 @@ class WarcStreamReader extends StreamTransformerBase<List<int>, WarcRecord> {
           final restOfBytes =
               Uint8List.sublistView(contentBuffer, header.contentLength + 4);
           buffer.add(restOfBytes);
+          final ct = (header['Content-Type'] ?? '').split(';').first.trim();
+          WarcBlock? block;
+          if (ct == 'application/http') {
+            block = WarcHttpBlock.parseBytes(contentBytes);
+          }
           yield WarcRecord(
             header: header,
-            block: WarcBlock(contentBytes),
+            block: block ?? WarcBlock(contentBytes),
           );
           header = null;
           emitted = true;

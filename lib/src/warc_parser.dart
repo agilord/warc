@@ -2,10 +2,8 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'common.dart';
 import 'warc_record.dart';
-
-const lineFeed = 10;
-const carriageReturn = 13;
 
 int indexOfHeaderEnd(Uint8List buffer) {
   var start = 0;
@@ -44,16 +42,21 @@ WarcHeader parseHeaderBytes(Uint8List bytes) {
     throw FormatException('Does not start with WARC/');
   }
   final warcVersion = lines.first.split('/').skip(1).join('/');
+  final values = parseHeaderValues(lines.skip(1));
+  return WarcHeader.fromValues(
+    version: warcVersion,
+    values: values,
+  );
+}
+
+Map<String, String> parseHeaderValues(Iterable<String> lines) {
   final values = <String, String>{};
-  for (final line in lines.skip(1)) {
+  for (final line in lines) {
     final index = line.indexOf(':');
     if (index < 0) throw FormatException('Line does not have valid key: $line');
     final key = line.substring(0, index).trim();
     final value = line.substring(index + 1).trim();
     values[key] = value;
   }
-  return WarcHeader.fromValues(
-    version: warcVersion,
-    values: values,
-  );
+  return values;
 }

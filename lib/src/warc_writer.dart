@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'warc_parser.dart';
+import 'common.dart';
 import 'warc_record.dart';
 
 class OffsetLength {

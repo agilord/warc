@@ -21,6 +21,12 @@ void main() {
         final hash = base32.encode(castBytes(sha1.convert(bytes).bytes));
         expect(hash, 'IJCC6OVIIPVV5KV6WESWIGH7UV2NO34X');
         expect(r.header['WARC-Block-Digest'], 'sha1:$hash');
+
+        final block = r.block as WarcHttpBlock;
+        expect(block.payloadBytes, hasLength(20289));
+        final payloadHash =
+            base32.encode(castBytes(sha1.convert(block.payloadBytes).bytes));
+        expect(payloadHash, 'CIBK2YFSVPNDFLXUHSKZG2SPN7UNN65W');
       }
 
       final file = File('test_assets/single-response.warc');

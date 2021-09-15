@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 
+import 'common.dart';
+
 class WarcRecord {
   final WarcHeader header;
   final WarcBlock block;
@@ -29,7 +31,7 @@ abstract class WarcTypes {
 
 class WarcHeader {
   final String version;
-  final Map<String, String> _values;
+  final CaseInsensitiveMap _values;
 
   String? _type;
   DateTime? _date;
@@ -40,7 +42,7 @@ class WarcHeader {
   WarcHeader.fromValues({
     this.version = '1.1',
     required Map<String, String> values,
-  }) : _values = <String, String>{...values};
+  }) : _values = CaseInsensitiveMap<String>(values);
 
   WarcHeader({
     this.version = '1.1',
@@ -62,7 +64,7 @@ class WarcHeader {
     String? filename,
     String? truncated,
     Map<String, String>? values,
-  })  : _values = <String, String>{
+  })  : _values = CaseInsensitiveMap<String>({
           'WARC-Type': type,
           'WARC-Date': date.toUtc().toIso8601String(),
           'WARC-Record-ID': _uri(recordId),
@@ -84,25 +86,14 @@ class WarcHeader {
           if (filename != null) 'WARC-Filename': filename,
           if (truncated != null) 'WARC-Truncated': truncated,
           if (values != null) ...values,
-        },
+        }),
         _type = type,
         _date = date,
         _contentLength = contentLength,
         _targetUri = targetUri;
 
   Iterable<String> get keys => _values.keys;
-  String? operator [](String key) {
-    if (_values.containsKey(key)) {
-      return _values[key];
-    }
-    final lc = key.toLowerCase();
-    for (final k in keys) {
-      if (k.toLowerCase() == lc) {
-        return _values[k];
-      }
-    }
-    return null;
-  }
+  String? operator [](String key) => _values[key];
 
   DateTime get date => _date ??= DateTime.parse(this['WARC-Date']!);
   String get type => _type ??= this['WARC-Type']!;
