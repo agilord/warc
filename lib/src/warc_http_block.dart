@@ -7,6 +7,9 @@ import 'warc_record.dart';
 
 class WarcHttpBlock implements WarcBlock {
   Uint8List? _bytes;
+  String? _httpVersion;
+  int? _statusCode;
+  String? _statusReason;
   Map<String, String>? _header;
   Uint8List? _headerBytes;
   Uint8List? _payloadBytes;
@@ -28,27 +31,78 @@ class WarcHttpBlock implements WarcBlock {
   }
 
   WarcHttpBlock.build({
+    String httpVersion = '1.1',
+    int statusCode = 200,
+    String? statusReason = 'OK',
     required Map<String, String> header,
     required Uint8List payload,
   }) {
+    _httpVersion = httpVersion;
+    _statusCode = statusCode;
+    _statusReason = statusReason;
     _header = CaseInsensitiveMap<String>(header);
     _payloadBytes = payload;
   }
 
+  static WarcHttpBlock fromBlock(WarcBlock block) {
+    if (block is WarcHttpBlock) return block;
+    return WarcHttpBlock.parseBytes(block.bytes);
+  }
+
+  void _parseHeader() {
+    final lines = utf8
+        .decode(_headerBytes!)
+        .split('\n')
+        .map((e) => e.trimRight())
+        .where((e) => e.isNotEmpty)
+        .toList();
+    if (lines.isEmpty) throw FormatException('Empty HTTP header.');
+    if (!lines.first.startsWith('HTTP/')) {
+      throw FormatException('Does not start with HTTP: `${lines.first}`');
+    }
+    final parts = lines.first.split(' ');
+    if (parts.length < 2) {
+      throw FormatException('Does not follows HTTP lead: `${lines.first}`');
+    }
+    _httpVersion = parts.first.split('/').skip(1).join('/');
+    _statusCode = int.parse(parts[1]);
+    _statusReason = parts.skip(2).join(' ').trim();
+    _header ??= CaseInsensitiveMap<String>(parseHeaderValues(lines.skip(1)));
+  }
+
+  int get statusCode {
+    if (_statusCode == null) {
+      _parseHeader();
+    }
+    return _statusCode!;
+  }
+
+  @override
+  String? get blockContentType => 'application/http';
+
+  late final String? payloadContentType = header['Content-Type'];
+
   Map<String, String> get header {
-    return _header ??= CaseInsensitiveMap<String>(
-      parseHeaderValues(utf8
-          .decode(_headerBytes!)
-          .split('\n')
-          .map((e) => e.trimRight())
-          .where((e) => e.isNotEmpty)),
-    );
+    if (_header == null) {
+      _parseHeader();
+    }
+    return _header!;
   }
 
   @override
   Uint8List get bytes {
     if (_headerBytes == null) {
-      final text = [..._header!.entries.map((e) => null), '', ''].join('\r\n');
+      final firstLine = [
+        'HTTP/$_httpVersion',
+        '$statusCode',
+        if (_statusReason != null && _statusReason!.isNotEmpty) _statusReason!,
+      ].join(' ');
+      final text = [
+        firstLine,
+        ..._header!.entries.map((e) => '${e.key}: ${e.value}'),
+        '',
+        '',
+      ].join('\r\n');
       _headerBytes = Uint8List.fromList(utf8.encode(text));
     }
     if (_bytes == null) {

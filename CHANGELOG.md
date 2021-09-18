@@ -4,6 +4,7 @@
 - Renamed `WarcRecord.payload` to `block` (also: `WarcBlock`).
 - `WarcBlock` and with that `WarcRecord` is now only synchronous.
 - `readWarc` returns a stream instead of callback method.
+- `CdxjRecord` follows `pywb` conventions.
 
 ## 0.0.3
 

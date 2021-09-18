@@ -13,28 +13,28 @@ class OffsetLength {
 
 class WarcRecordPosition {
   final OffsetLength raw;
-  final OffsetLength encoded;
+  final OffsetLength compressed;
 
   WarcRecordPosition({
     required this.raw,
-    required this.encoded,
+    required this.compressed,
   });
 }
 
 class WarcWriter {
   final Sink<List<int>> _outputSink;
-  final Converter<List<int>, List<int>>? _encoder;
+  final Converter<List<int>, List<int>>? _compressor;
   bool _isClosed = false;
   int _rawOffset = 0;
   int _encodedOffset = 0;
 
-  WarcWriter._(this._outputSink, this._encoder);
+  WarcWriter._(this._outputSink, this._compressor);
 
   factory WarcWriter({
     required Sink<List<int>> output,
-    Converter<List<int>, List<int>>? encoder,
+    Converter<List<int>, List<int>>? compressor,
   }) {
-    return WarcWriter._(output, encoder);
+    return WarcWriter._(output, compressor);
   }
 
   int get rawOffset => _rawOffset;
@@ -43,8 +43,8 @@ class WarcWriter {
   Future<WarcRecordPosition> add(WarcRecord record) async {
     if (_isClosed) throw StateError('Writer was already closed.');
 
-    final counterSink = _encoder == null ? null : _CounterSink(_outputSink);
-    final chunkedSink = _encoder?.startChunkedConversion(counterSink!);
+    final counterSink = _compressor == null ? null : _CounterSink(_outputSink);
+    final chunkedSink = _compressor?.startChunkedConversion(counterSink!);
     final sink = chunkedSink ?? _outputSink;
 
     var rawLength = 0;
@@ -65,11 +65,12 @@ class WarcWriter {
 
     final position = WarcRecordPosition(
       raw: OffsetLength(_rawOffset, rawLength),
-      encoded: OffsetLength(_rawOffset, counterSink?._offset ?? rawLength),
+      compressed:
+          OffsetLength(_encodedOffset, counterSink?._offset ?? rawLength),
     );
 
     _rawOffset += position.raw.length;
-    _encodedOffset += position.encoded.length;
+    _encodedOffset += position.compressed.length;
     return position;
   }
 

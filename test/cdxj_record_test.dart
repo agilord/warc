@@ -1,31 +1,38 @@
 import 'package:test/test.dart';
-import 'package:warc/src/warc_record.dart';
 import 'package:warc/warc.dart';
 
 void main() {
   group('CDXJ', () {
     test('serialize', () {
+      final r = CdxjRecord(
+        url: Uri.parse('http://example.com:80/x'),
+        timestamp: DateTime.utc(2021, 9, 10, 11, 12, 13),
+        mime: 'text/html',
+        filename: 'x.warc.gz',
+        offset: 12,
+        length: 34,
+      );
       expect(
-        CdxjRecord(
-          uri: Uri.parse('http://hvg.hu:80/x'),
-          timestamp: DateTime.utc(2021, 9, 10, 11, 12, 13),
-          type: WarcTypes.response,
-          reference: warcfileUri('x.warc.gz', 12),
-        ).toString(),
-        'hu,hvg)/x 20210910111213 response {"uri":"http://hvg.hu/x","ref":"warcfile:x.warc.gz#12"}',
+        r.toString(),
+        'com,example)/x 20210910111213 {"url":"http://example.com/x","mime":"text/html","filename":"x.warc.gz","offset":"12","length":"34"}',
+      );
+      expect(
+        r.toString(typed: true),
+        'com,example)/x 20210910111213 {"url":"http://example.com/x","mime":"text/html","filename":"x.warc.gz","offset":12,"length":34}',
       );
 
       expect(
         CdxjRecord(
-          uri: Uri.parse('https://hvg.hu:443/?id=1'),
+          url: Uri.parse('https://example.com:443/?id=1'),
           timestamp: DateTime.utc(2021, 9, 10, 11, 12, 13),
-          type: WarcTypes.response,
-          reference: warcfileUri('x.warc.gz', 12),
-          httpStatusCode: 200,
-          mediaContentType: 'text/html',
-          recordId: 'rid-1',
+          mime: 'text/html',
+          filename: 'x.warc.gz',
+          offset: 0,
+          length: 1000,
+          status: 200,
+          digest: 'abc-123',
         ).toString(),
-        'hu,hvg)/?id=1 20210910111213 response {"uri":"https://hvg.hu/?id=1","hsc":200,"mct":"text/html","ref":"warcfile:x.warc.gz#12","rid":"rid-1"}',
+        'com,example)/?id=1 20210910111213 {"url":"https://example.com/?id=1","mime":"text/html","filename":"x.warc.gz","offset":"0","length":"1000","status":"200","digest":"abc-123"}',
       );
     });
   });

@@ -4,29 +4,42 @@ Uri warcfileUri(String filename, int offset) {
   return Uri(scheme: 'warcfile', path: filename, fragment: '$offset');
 }
 
+Uri wgzUri(String filename, int offset, int length,
+    [int? offset2, int? length2]) {
+  final fragment = StringBuffer('$offset+$length');
+  if (offset2 != null && offset2 != offset) {
+    fragment.write('/$offset2+$length2');
+  }
+  return Uri(scheme: 'wgz', path: filename, fragment: fragment.toString());
+}
+
 class CdxjRecord {
-  final Uri uri;
+  final Uri url;
   final DateTime timestamp;
-  final String type;
-  final Uri reference;
-  final int? httpStatusCode;
-  final String? mediaContentType;
-  final String? recordId;
+  final String mime;
+  final String filename;
+  final int offset;
+  final int length;
+  final int? status;
+  final String? digest;
 
   CdxjRecord({
-    required this.uri,
+    required this.url,
     required this.timestamp,
-    required this.type,
-    required this.reference,
-    this.httpStatusCode,
-    this.mediaContentType,
-    this.recordId,
+    required this.mime,
+    required this.filename,
+    required this.offset,
+    required this.length,
+    this.status,
+    this.digest,
   });
 
   @override
-  String toString() {
+  String toString({
+    bool typed = false,
+  }) {
     return [
-      uri.toSearchableUrl(),
+      url.toSearchableUrl(),
       timestamp
           .toUtc()
           .toIso8601String()
@@ -35,13 +48,14 @@ class CdxjRecord {
           .replaceAll('T', '')
           .split('.')
           .first,
-      type,
       json.encode({
-        'uri': uri.toString(),
-        if (httpStatusCode != null) 'hsc': httpStatusCode,
-        if (mediaContentType != null) 'mct': mediaContentType,
-        'ref': reference.toString(),
-        if (recordId != null) 'rid': recordId,
+        'url': url.toString(),
+        'mime': mime,
+        'filename': filename,
+        'offset': typed ? offset : offset.toString(),
+        'length': typed ? length : length.toString(),
+        if (status != null) 'status': typed ? status : status.toString(),
+        if (digest != null) 'digest': digest,
       }),
     ].join(' ');
   }

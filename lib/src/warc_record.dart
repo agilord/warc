@@ -6,10 +6,18 @@ class WarcRecord {
   final WarcHeader header;
   final WarcBlock block;
 
-  WarcRecord({
-    required this.header,
-    required this.block,
-  });
+  WarcRecord._(this.header, this.block);
+
+  factory WarcRecord(WarcHeader header, WarcBlock block) {
+    if (!header.hasContentLength ||
+        (!header.hasContentType && block.blockContentType != null)) {
+      header = header.change(
+        contentLength: header.hasContentLength ? null : block.bytes.length,
+        contentType: header.hasContentType ? null : block.blockContentType,
+      );
+    }
+    return WarcRecord._(header, block);
+  }
 }
 
 String _uri(String url) {
@@ -49,7 +57,7 @@ class WarcHeader {
     required String type,
     required DateTime date,
     required String recordId,
-    required int contentLength,
+    int? contentLength,
     String? contentType,
     String? warcinfoId,
     String? concurrentTo,
@@ -68,7 +76,7 @@ class WarcHeader {
           'WARC-Type': type,
           'WARC-Date': date.toUtc().toIso8601String(),
           'WARC-Record-ID': _uri(recordId),
-          'Content-Length': contentLength.toString(),
+          if (contentLength != null) 'Content-Length': contentLength.toString(),
           if (contentType != null) 'Content-Type': contentType,
           if (warcinfoId != null) 'WARC-Warcinfo-ID': _uri(warcinfoId),
           if (concurrentTo != null) 'WARC-Concurrent-To': _uri(concurrentTo),
@@ -101,6 +109,8 @@ class WarcHeader {
 
   int get contentLength =>
       _contentLength ??= int.parse(this['Content-Length'] ?? '0');
+  late final hasContentLength = this['Content-Length'] != null;
+  late final hasContentType = this['Content-Type'] != null;
 
   Uri? get targetUri {
     if (_targetUri == null) {
@@ -109,10 +119,26 @@ class WarcHeader {
     }
     return _targetUri;
   }
+
+  WarcHeader change({
+    int? contentLength,
+    String? contentType,
+  }) {
+    return WarcHeader.fromValues(
+      values: {
+        ..._values,
+        if (contentLength != null) 'Content-Length': contentLength.toString(),
+        if (contentType != null) 'Content-Type': contentType,
+      },
+      version: version,
+    );
+  }
 }
 
 class WarcBlock {
   final Uint8List bytes;
 
   WarcBlock(this.bytes);
+
+  String? get blockContentType => null;
 }

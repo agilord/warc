@@ -5,20 +5,15 @@ import 'cdxj_record.dart';
 
 class CdxjWriter {
   final Sink<List<int>> _outputSink;
-  bool _emitVersion;
+  final bool typed;
 
   CdxjWriter({
     required Sink<List<int>> output,
-    bool emitVersion = false,
-  })  : _outputSink = output,
-        _emitVersion = emitVersion;
+    this.typed = false,
+  }) : _outputSink = output;
 
   void add(CdxjRecord record) {
-    if (_emitVersion) {
-      _emit('!OpenWayback-CDXJ 1.0');
-      _emitVersion = false;
-    }
-    _emit(record.toString());
+    _emit(record.toString(typed: typed));
   }
 
   void _emit(String line) {

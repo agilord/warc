@@ -44,10 +44,7 @@ class WarcStreamReader extends StreamTransformerBase<List<int>, WarcRecord> {
           if (ct == 'application/http') {
             block = WarcHttpBlock.parseBytes(contentBytes);
           }
-          yield WarcRecord(
-            header: header,
-            block: block ?? WarcBlock(contentBytes),
-          );
+          yield WarcRecord(header, block ?? WarcBlock(contentBytes));
           header = null;
           emitted = true;
         }

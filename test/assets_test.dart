@@ -27,6 +27,8 @@ void main() {
         final payloadHash =
             base32.encode(castBytes(sha1.convert(block.payloadBytes).bytes));
         expect(payloadHash, 'CIBK2YFSVPNDFLXUHSKZG2SPN7UNN65W');
+        expect(block.statusCode, 200);
+        expect(block.payloadContentType, 'text/html; charset=UTF-8');
       }
 
       final file = File('test_assets/single-response.warc');
@@ -41,8 +43,8 @@ void main() {
       final pos1 = await plainWriter.add(r);
       expect(pos1.raw.offset, 0);
       expect(pos1.raw.length, 21507);
-      expect(pos1.encoded.offset, 0);
-      expect(pos1.encoded.length, 21507);
+      expect(pos1.compressed.offset, 0);
+      expect(pos1.compressed.length, 21507);
 
       expect(plainWriter.rawOffset, 21507);
       expect(plainWriter.encodedOffset, 21507);
@@ -52,12 +54,12 @@ void main() {
 
       final compressedSink = BytesBuilderSink();
       final compressedWriter =
-          WarcWriter(output: compressedSink, encoder: gzip.encoder);
+          WarcWriter(output: compressedSink, compressor: gzip.encoder);
       final pos2 = await compressedWriter.add(r);
       expect(pos2.raw.offset, 0);
       expect(pos2.raw.length, 21507);
-      expect(pos2.encoded.offset, 0);
-      expect(pos2.encoded.length, 5392);
+      expect(pos2.compressed.offset, 0);
+      expect(pos2.compressed.length, 5392);
       expect(compressedWriter.rawOffset, 21507);
       expect(compressedWriter.encodedOffset, 5392);
       await compressedWriter.close();
