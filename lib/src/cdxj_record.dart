@@ -34,6 +34,23 @@ class CdxjRecord {
     this.digest,
   });
 
+  factory CdxjRecord.parse(String value) {
+    final parts = value.split(' ');
+    final timestamp =
+        DateTime.parse('${parts[1].substring(0, 8)}T${parts[1].substring(8)}Z');
+    final map = json.decode(parts.skip(2).join(' ')) as Map<String, dynamic>;
+    return CdxjRecord(
+      url: Uri.parse(map['url'] as String),
+      timestamp: timestamp,
+      mime: map['mime'] as String,
+      filename: map['filename'] as String,
+      offset: _parseInt(map['offset'])!,
+      length: _parseInt(map['length'])!,
+      status: _parseInt(map['status']),
+      digest: map['digest'] as String?,
+    );
+  }
+
   @override
   String toString({
     bool typed = false,
@@ -59,6 +76,13 @@ class CdxjRecord {
       }),
     ].join(' ');
   }
+}
+
+int? _parseInt(dynamic v) {
+  if (v == null) return null;
+  if (v is int) return v;
+  if (v is String) return int.parse(v);
+  throw FormatException('Unknown value: $v');
 }
 
 extension UriExt on Uri {

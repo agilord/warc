@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -57,6 +58,13 @@ void main() {
           payload: Uint8List.fromList(<int>[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
         ),
       ));
+      await writer.add(WarcRecord(
+        WarcHeader(
+            type: WarcTypes.request,
+            date: DateTime.utc(2021, 09, 09, 09, 09, 09),
+            recordId: 'r-3'),
+        WarcBlock(Uint8List.fromList(utf8.encode('-'))),
+      ));
       await writer.close();
     });
 
@@ -75,7 +83,7 @@ void main() {
           'com,example)/b 20211231235959 {"url":"http://example.com/b","mime":"image/none","filename":"$filename","offset":"166","length":"228","status":"200","digest":"494179714a6cd627239dfededf2de9ef994caf03"}\r\n');
     });
 
-    test('Reading back warc', () async {
+    test('Reading a single record with positions', () async {
       final records = await readWarc(
               warcFile.openRead(166, 166 + 228).transform(gzip.decoder))
           .toList();
@@ -88,5 +96,12 @@ void main() {
       });
       expect(body.payloadBytes, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
     });
+
+    // TODO: re-enable after gzip decoder reads full stream.
+    // test('Reading everything', () async {
+    //   final records =
+    //       await readWarc(warcFile.openRead().transform(gzip.decoder)).toList();
+    //   expect(records, hasLength(3));
+    // });
   });
 }
