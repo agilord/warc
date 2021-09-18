@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -73,6 +72,7 @@ void main() {
       expect(files, hasLength(2));
       warcFile = files.firstWhere((f) => f.path.endsWith('.warc.gz'));
       cdxjFile = files.firstWhere((f) => f.path.endsWith('.cdxj'));
+      expect(warcFile.path, hasLength(cdxjFile.path.length + 8));
     });
 
     test('CDXJ file', () {

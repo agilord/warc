@@ -1,3 +1,8 @@
+## 0.0.5
+
+**Breaking changes**:
+- Default file name pattern changes in `WarcFileWriter`.
+
 ## 0.0.4
 
 **Breaking changes**:

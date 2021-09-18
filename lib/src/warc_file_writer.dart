@@ -49,14 +49,13 @@ class WarcFileWriter {
 
   Future<void> _updateOutputFile() async {
     _timestampId ??= DateTime.now()
-            .toUtc()
-            .toIso8601String()
-            .replaceAll('-', '')
-            .replaceAll('T', '')
-            .replaceAll(':', '')
-            .split('.')
-            .first +
-        'Z';
+        .toUtc()
+        .toIso8601String()
+        .replaceAll('-', '')
+        .replaceAll('T', '')
+        .replaceAll(':', '')
+        .split('.')
+        .first;
     if (_currentLength >= _maxLength) {
       _serialId = null;
       _serialToken = null;
@@ -65,10 +64,9 @@ class WarcFileWriter {
     _serialId ??= (_nextSerial++).toString().padLeft(_serialNumberWidth, '0');
     _serialToken ??= Iterable.generate(
         _serialTokenWidth, (i) => _random.nextInt(36).toRadixString(36)).join();
+    final shortBase = [prefix, _timestampId, _serialId];
     final basename = [
-      prefix,
-      _timestampId,
-      _serialId,
+      ...shortBase,
       if (_serialToken!.isNotEmpty) _serialToken,
     ].join('-');
     final warcFileName = '$basename.warc.gz';
@@ -85,7 +83,7 @@ class WarcFileWriter {
     );
 
     if (_cdxjWriter == null) {
-      _cdxjSink = File(p.join(baseDirectoryPath, '$basename.cdxj'))
+      _cdxjSink = File(p.join(baseDirectoryPath, '${shortBase.join('-')}.cdxj'))
           .openWrite(mode: FileMode.writeOnlyAppend);
       _cdxjWriter = CdxjWriter(
         output: _cdxjSink!,
