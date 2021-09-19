@@ -19,7 +19,8 @@ class WarcHttpBlock implements WarcBlock {
   WarcHttpBlock.parseBytes(List<int> bytes) {
     _bytes = castBytes(bytes);
     final index = indexOfHeaderEnd(_bytes!);
-    _headerBytes = index < 0 ? _bytes : Uint8List.sublistView(_bytes!, 0, index);
+    _headerBytes =
+        index < 0 ? _bytes : Uint8List.sublistView(_bytes!, 0, index);
     _payloadBytes =
         index < 0 ? Uint8List(0) : Uint8List.sublistView(_bytes!, index);
   }

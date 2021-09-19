@@ -1,5 +1,7 @@
 ## 0.0.5
 
+- Guard against concurrent calls.
+
 **Breaking changes**:
 - Default file name pattern changes in `WarcFileWriter`.
 

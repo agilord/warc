@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
+import 'package:synchronized/synchronized.dart';
 import 'package:warc/src/warc_record.dart';
 import 'package:warc/warc.dart';
 
@@ -35,6 +36,7 @@ class WarcFileWriter {
   WarcWriter? _warcWriter;
   IOSink? _cdxjSink;
   CdxjWriter? _cdxjWriter;
+  final _lock = Lock();
 
   WarcFileWriter({
     required this.baseDirectoryPath,
@@ -67,9 +69,10 @@ class WarcFileWriter {
     _serialId ??= (_nextSerial++).toString().padLeft(_serialNumberWidth, '0');
     _serialToken ??= Iterable.generate(
         _serialTokenWidth, (i) => _random.nextInt(36).toRadixString(36)).join();
-    final shortBase = [prefix, _timestampId, _serialId];
+    final shortBase = [prefix, _timestampId];
     final basename = [
       ...shortBase,
+      _serialId,
       if (_serialToken!.isNotEmpty) _serialToken,
     ].join('-');
     final warcFileName = '$basename.warc.gz';
@@ -103,49 +106,55 @@ class WarcFileWriter {
   }
 
   Future<void> add(WarcRecord record) async {
-    await _createBaseDirIfNeeded();
-    await _updateOutputFile();
-    final position = await _warcWriter!.add(record);
-    if (_autoFlush) {
-      await _warcSink!.flush();
-    }
-
-    if (_cdxjWriter != null && record.header.targetUri != null) {
-      String? mime;
-      String? digest;
-      WarcHttpBlock? httpBlock;
-      final ct = (record.header['Content-Type'] ?? '').split(';').first.trim();
-      if (ct == 'application/http') {
-        httpBlock = WarcHttpBlock.fromBlock(record.block);
-        if (record.header.type == WarcTypes.response) {
-          mime = httpBlock.payloadContentType?.split(';').first.trim();
-        }
-        digest = hex.encode(sha1.convert(httpBlock.payloadBytes).bytes);
+    await _lock.synchronized(() async {
+      await _createBaseDirIfNeeded();
+      await _updateOutputFile();
+      final position = await _warcWriter!.add(record);
+      if (_autoFlush) {
+        await _warcSink!.flush();
       }
 
-      final cdxj = CdxjRecord(
-        url: record.header.targetUri!,
-        timestamp: record.header.date,
-        mime: mime ?? 'warc/${record.header.type}',
-        filename: _currentFileName!,
-        offset: position.compressed.offset,
-        length: position.compressed.length,
-        status: httpBlock?.statusCode,
-        digest: digest ?? hex.encode(sha1.convert(record.block.bytes).bytes),
-      );
-      final storeCdxj = _storeCdxjFn == null ? true : await _storeCdxjFn!(cdxj);
-      if (storeCdxj) {
-        _cdxjWriter!.add(cdxj);
-        if (_autoFlush) {
-          await _cdxjSink!.flush();
+      if (_cdxjWriter != null && record.header.targetUri != null) {
+        String? mime;
+        String? digest;
+        WarcHttpBlock? httpBlock;
+        final ct =
+            (record.header['Content-Type'] ?? '').split(';').first.trim();
+        if (ct == 'application/http') {
+          httpBlock = WarcHttpBlock.fromBlock(record.block);
+          if (record.header.type == WarcTypes.response) {
+            mime = httpBlock.payloadContentType?.split(';').first.trim();
+          }
+          digest = hex.encode(sha1.convert(httpBlock.payloadBytes).bytes);
+        }
+
+        final cdxj = CdxjRecord(
+          url: record.header.targetUri!,
+          timestamp: record.header.date,
+          mime: mime ?? 'warc/${record.header.type}',
+          filename: _currentFileName!,
+          offset: position.compressed.offset,
+          length: position.compressed.length,
+          status: httpBlock?.statusCode,
+          digest: digest ?? hex.encode(sha1.convert(record.block.bytes).bytes),
+        );
+        final storeCdxj =
+            _storeCdxjFn == null ? true : await _storeCdxjFn!(cdxj);
+        if (storeCdxj) {
+          await _cdxjWriter!.add(cdxj);
+          if (_autoFlush) {
+            await _cdxjSink!.flush();
+          }
         }
       }
-    }
+    });
   }
 
   Future<void> close() async {
-    await _closeWarcWriter();
-    await _closeCdxjWriter();
+    await _lock.synchronized(() async {
+      await _closeWarcWriter();
+      await _closeCdxjWriter();
+    });
   }
 
   Future<void> _closeWarcWriter() async {

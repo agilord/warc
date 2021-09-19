@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:synchronized/synchronized.dart';
+
 import 'common.dart';
 import 'warc_record.dart';
 
@@ -27,6 +29,7 @@ class WarcWriter {
   bool _isClosed = false;
   int _rawOffset = 0;
   int _encodedOffset = 0;
+  final _lock = Lock();
 
   WarcWriter._(this._outputSink, this._compressor);
 
@@ -41,43 +44,48 @@ class WarcWriter {
   int get encodedOffset => _encodedOffset;
 
   Future<WarcRecordPosition> add(WarcRecord record) async {
-    if (_isClosed) throw StateError('Writer was already closed.');
+    return await _lock.synchronized(() async {
+      if (_isClosed) throw StateError('Writer was already closed.');
 
-    final counterSink = _compressor == null ? null : _CounterSink(_outputSink);
-    final chunkedSink = _compressor?.startChunkedConversion(counterSink!);
-    final sink = chunkedSink ?? _outputSink;
+      final counterSink =
+          _compressor == null ? null : _CounterSink(_outputSink);
+      final chunkedSink = _compressor?.startChunkedConversion(counterSink!);
+      final sink = chunkedSink ?? _outputSink;
 
-    var rawLength = 0;
-    void writeChunk(List<int> data) {
-      rawLength += data.length;
-      sink.add(data);
-    }
+      var rawLength = 0;
+      void writeChunk(List<int> data) {
+        rawLength += data.length;
+        sink.add(data);
+      }
 
-    writeChunk(utf8.encode('WARC/${record.header.version}\r\n'));
-    for (final key in record.header.keys) {
-      writeChunk(utf8.encode('$key: ${record.header[key]}\r\n'));
-    }
-    writeChunk([carriageReturn, lineFeed]);
-    writeChunk(record.block.bytes);
-    writeChunk([carriageReturn, lineFeed, carriageReturn, lineFeed]);
+      writeChunk(utf8.encode('WARC/${record.header.version}\r\n'));
+      for (final key in record.header.keys) {
+        writeChunk(utf8.encode('$key: ${record.header[key]}\r\n'));
+      }
+      writeChunk([carriageReturn, lineFeed]);
+      writeChunk(record.block.bytes);
+      writeChunk([carriageReturn, lineFeed, carriageReturn, lineFeed]);
 
-    chunkedSink?.close();
+      chunkedSink?.close();
 
-    final position = WarcRecordPosition(
-      raw: OffsetLength(_rawOffset, rawLength),
-      compressed:
-          OffsetLength(_encodedOffset, counterSink?._offset ?? rawLength),
-    );
+      final position = WarcRecordPosition(
+        raw: OffsetLength(_rawOffset, rawLength),
+        compressed:
+            OffsetLength(_encodedOffset, counterSink?._offset ?? rawLength),
+      );
 
-    _rawOffset += position.raw.length;
-    _encodedOffset += position.compressed.length;
-    return position;
+      _rawOffset += position.raw.length;
+      _encodedOffset += position.compressed.length;
+      return position;
+    });
   }
 
   Future<void> close() async {
     if (_isClosed) return;
-    _isClosed = true;
-    _outputSink.close();
+    await _lock.synchronized(() async {
+      _isClosed = true;
+      _outputSink.close();
+    });
   }
 }
 
