@@ -28,6 +28,7 @@ class WarcFileWriter {
   int _currentLength = 0;
   final int _maxLength;
   bool _baseDirCreated = false;
+  final bool _autoFlush;
 
   String? _currentFileName;
   IOSink? _warcSink;
@@ -42,10 +43,12 @@ class WarcFileWriter {
     int serialTokenWidth = 4,
     int maxLength = 1024 * 1024 * 1024,
     StoreCdxjFn? storeCdxjFn,
+    bool autoFlush = true,
   })  : _serialNumberWidth = serialNumberWidth,
         _serialTokenWidth = serialTokenWidth,
         _maxLength = maxLength,
-        _storeCdxjFn = storeCdxjFn;
+        _storeCdxjFn = storeCdxjFn,
+        _autoFlush = autoFlush;
 
   Future<void> _updateOutputFile() async {
     _timestampId ??= DateTime.now()
@@ -103,6 +106,9 @@ class WarcFileWriter {
     await _createBaseDirIfNeeded();
     await _updateOutputFile();
     final position = await _warcWriter!.add(record);
+    if (_autoFlush) {
+      await _warcSink!.flush();
+    }
 
     if (_cdxjWriter != null && record.header.targetUri != null) {
       String? mime;
@@ -130,6 +136,9 @@ class WarcFileWriter {
       final storeCdxj = _storeCdxjFn == null ? true : await _storeCdxjFn!(cdxj);
       if (storeCdxj) {
         _cdxjWriter!.add(cdxj);
+        if (_autoFlush) {
+          await _cdxjSink!.flush();
+        }
       }
     }
   }
