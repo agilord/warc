@@ -72,7 +72,7 @@ void main() {
       expect(files, hasLength(2));
       warcFile = files.firstWhere((f) => f.path.endsWith('.warc.gz'));
       cdxjFile = files.firstWhere((f) => f.path.endsWith('.cdxj'));
-      expect(warcFile.path, hasLength(cdxjFile.path.length + 8));
+      expect(warcFile.path, hasLength(cdxjFile.path.length + 12));
     });
 
     test('CDXJ file', () {
