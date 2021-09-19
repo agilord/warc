@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:buffer/buffer.dart';
+
 import 'common.dart';
 import 'warc_parser.dart';
 import 'warc_record.dart';
@@ -14,20 +16,20 @@ class WarcHttpBlock implements WarcBlock {
   Uint8List? _headerBytes;
   Uint8List? _payloadBytes;
 
-  WarcHttpBlock.parseBytes(Uint8List bytes) {
-    _bytes = bytes;
-    final index = indexOfHeaderEnd(bytes);
-    _headerBytes = index < 0 ? _bytes : Uint8List.sublistView(bytes, 0, index);
+  WarcHttpBlock.parseBytes(List<int> bytes) {
+    _bytes = castBytes(bytes);
+    final index = indexOfHeaderEnd(_bytes!);
+    _headerBytes = index < 0 ? _bytes : Uint8List.sublistView(_bytes!, 0, index);
     _payloadBytes =
-        index < 0 ? Uint8List(0) : Uint8List.sublistView(bytes, index);
+        index < 0 ? Uint8List(0) : Uint8List.sublistView(_bytes!, index);
   }
 
   WarcHttpBlock.fromFrames({
-    required Uint8List headerBytes,
-    required Uint8List payload,
+    required List<int> headerBytes,
+    required List<int> payload,
   }) {
-    _headerBytes = headerBytes;
-    _payloadBytes = payload;
+    _headerBytes = castBytes(headerBytes);
+    _payloadBytes = castBytes(payload);
   }
 
   WarcHttpBlock.build({
@@ -35,13 +37,13 @@ class WarcHttpBlock implements WarcBlock {
     int statusCode = 200,
     String? statusReason = 'OK',
     required Map<String, String> header,
-    required Uint8List payload,
+    required List<int> payload,
   }) {
     _httpVersion = httpVersion;
     _statusCode = statusCode;
     _statusReason = statusReason;
     _header = CaseInsensitiveMap<String>(header);
-    _payloadBytes = payload;
+    _payloadBytes = castBytes(payload);
   }
 
   static WarcHttpBlock fromBlock(WarcBlock block) {

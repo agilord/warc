@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 
+import 'package:buffer/buffer.dart';
+
 import 'common.dart';
 
 class WarcRecord {
@@ -138,7 +140,7 @@ class WarcHeader {
 class WarcBlock {
   final Uint8List bytes;
 
-  WarcBlock(this.bytes);
+  WarcBlock(List<int> bytes) : bytes = castBytes(bytes);
 
   String? get blockContentType => null;
 }
