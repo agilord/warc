@@ -37,6 +37,6 @@ class CaseInsensitiveMap<V> extends MapBase<String, V> {
 
   @override
   V? remove(Object? key) {
-    _values.remove(key);
+    return _values.remove(key);
   }
 }

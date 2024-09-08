@@ -1,5 +1,7 @@
 ## 0.0.6
 
+- Updated dependencies and lints.
+
 ## 0.0.5
 
 - Guard against concurrent calls.

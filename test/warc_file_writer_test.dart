@@ -3,9 +3,6 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:test/test.dart';
-import 'package:warc/src/warc_file_writer.dart';
-import 'package:warc/src/warc_record.dart';
-import 'package:warc/warc.dart';
 import 'package:warc/warc_io.dart';
 
 void main() {

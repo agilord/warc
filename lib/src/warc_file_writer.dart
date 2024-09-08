@@ -6,11 +6,7 @@ import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 import 'package:synchronized/synchronized.dart';
-import 'package:warc/src/warc_record.dart';
 import 'package:warc/warc.dart';
-
-import 'cdxj_writer.dart';
-import 'warc_writer.dart';
 
 final _random = math.Random.secure();
 
